@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-/**
- * Route Handler: GET /api/auth/me
- * 
- * Context:
- * Validates active session and loads the user object.
- */
+
 export async function GET() {
   const tokenCookie = cookies().get('task_token');
 
@@ -42,7 +37,8 @@ export async function GET() {
 
     if (response.ok) {
       const userData = await response.json();
-      return NextResponse.json({ user: userData });
+      const user = userData.user || userData;
+      return NextResponse.json({ user });
     }
 
     return NextResponse.json({ user: null }, { status: 200 });

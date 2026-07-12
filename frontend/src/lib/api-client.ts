@@ -231,4 +231,17 @@ export const taskApi = {
     fetchClient<{ success: boolean; user: User }>(`/api/proxy/admin/users/${id}`, {
       method: 'DELETE',
     }),
+
+  // My Tasks — assigned to current user
+  getMyTasks: () =>
+    fetchClient<Task[]>('/api/proxy/tasks/my', {
+      method: 'GET',
+    }),
+
+  // Update own profile
+  updateProfile: (data: { name?: string; email?: string; current_password?: string; password?: string; password_confirmation?: string }) =>
+    fetchClient<User>('/api/proxy/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
 };

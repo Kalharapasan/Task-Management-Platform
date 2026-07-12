@@ -21,31 +21,33 @@ class DatabaseSeeder extends Seeder
         // 1. Create Users
         $admin = User::create([
             'name' => 'Admin Operator',
-            'email' => 'admin@taskplatform.com',
-            'password' => Hash::make('password'),
+            'email' => 'admin@task.com',
+            'password' => Hash::make('AdminPass123!'),
             'role' => 'admin',
         ]);
 
         $pm1 = User::create([
             'name' => 'Project Manager Alice',
-            'email' => 'pm1@taskplatform.com',
-            'password' => Hash::make('password'),
+            'email' => 'pm@task.com',
+            'password' => Hash::make('ManagerPass123!'),
             'role' => 'project_manager',
         ]);
 
         $pm2 = User::create([
             'name' => 'Project Manager Bob',
-            'email' => 'pm2@taskplatform.com',
-            'password' => Hash::make('password'),
+            'email' => 'pm2@task.com',
+            'password' => Hash::make('ManagerPass123!'),
             'role' => 'project_manager',
         ]);
 
         $team = [];
         for ($i = 1; $i <= 5; $i++) {
+            $email = $i === 1 ? 'member@task.com' : "member{$i}@task.com";
+            $password = $i === 1 ? 'MemberPass123!' : 'MemberPass123!';
             $team[] = User::create([
                 'name' => "Team Member {$i}",
-                'email' => "member{$i}@taskplatform.com",
-                'password' => Hash::make('password'),
+                'email' => $email,
+                'password' => Hash::make($password),
                 'role' => 'team_member',
             ]);
         }
@@ -179,14 +181,14 @@ class DatabaseSeeder extends Seeder
         $this->command->table(
             ['Role', 'Email', 'Password'],
             [
-                ['Admin', 'admin@taskplatform.com', 'password'],
-                ['Project Manager 1', 'pm1@taskplatform.com', 'password'],
-                ['Project Manager 2', 'pm2@taskplatform.com', 'password'],
-                ['Team Member 1', 'member1@taskplatform.com', 'password'],
-                ['Team Member 2', 'member2@taskplatform.com', 'password'],
-                ['Team Member 3', 'member3@taskplatform.com', 'password'],
-                ['Team Member 4', 'member4@taskplatform.com', 'password'],
-                ['Team Member 5', 'member5@taskplatform.com', 'password'],
+                ['Admin', 'admin@task.com', 'AdminPass123!'],
+                ['Project Manager 1', 'pm@task.com', 'ManagerPass123!'],
+                ['Project Manager 2', 'pm2@task.com', 'ManagerPass123!'],
+                ['Team Member 1', 'member@task.com', 'MemberPass123!'],
+                ['Team Member 2', 'member2@task.com', 'MemberPass123!'],
+                ['Team Member 3', 'member3@task.com', 'MemberPass123!'],
+                ['Team Member 4', 'member4@task.com', 'MemberPass123!'],
+                ['Team Member 5', 'member5@task.com', 'MemberPass123!'],
             ]
         );
     }

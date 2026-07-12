@@ -12,37 +12,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate mock credentials for three standard Task Management roles first to avoid backend 422 errors
-    let mockUser = null;
-    if (email === 'admin@task.com' && password === 'AdminPass123!') {
-      mockUser = { id: 1, name: 'Alex Thompson', email, role: 'admin' };
-    } else if (email === 'pm@task.com' && password === 'ManagerPass123!') {
-      mockUser = { id: 2, name: 'Deborah Vance', email, role: 'project_manager' };
-    } else if (email === 'member@task.com' && password === 'MemberPass123!') {
-      mockUser = { id: 3, name: 'Marcus Watkins', email, role: 'team_member' };
-    }
 
-    if (mockUser) {
-      cookies().set('task_token', `mock_token_for_${mockUser.role}`, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24,
-      });
 
-      cookies().set('task_role', mockUser.role, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24,
-      });
-
-      return NextResponse.json({ user: mockUser });
-    }
-
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace('localhost', '127.0.0.1');
 
     try {
       const response = await fetch(`${apiUrl}/login`, {

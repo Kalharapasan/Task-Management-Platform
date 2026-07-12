@@ -468,7 +468,7 @@ async function handleProxy(request: Request, { params }: { params: { path: strin
     return serveMockDatabase(path, method, requestBody);
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace('localhost', '127.0.0.1');
 
   try {
     const headers: Record<string, string> = {
@@ -577,7 +577,7 @@ async function handleProxy(request: Request, { params }: { params: { path: strin
     let backendPath = path;
     let payload = requestBody;
 
-    if (path.startsWith('projects') && path.split('/').length === 2 && method === 'POST') {
+    if (path === 'projects' && method === 'POST') {
       backendPath = `v1/projects`;
       payload = translateProjectToBackend(requestBody);
     } else if (path.startsWith('projects') && path.split('/').length === 2 && method === 'PUT') {
@@ -618,7 +618,7 @@ async function handleProxy(request: Request, { params }: { params: { path: strin
         name: requestBody.name,
         email: requestBody.email,
         role: requestBody.role,
-        password: requestBody.password || 'password'
+        password: requestBody.password || 'Password123!'
       };
     } else if (path.startsWith('admin/users')) {
       backendPath = path.replace('admin/users', 'v1/users');
@@ -632,9 +632,7 @@ async function handleProxy(request: Request, { params }: { params: { path: strin
       body: payload ? JSON.stringify(payload) : undefined,
     });
 
-    if (response.status === 404 || response.status === 401) {
-      return serveMockDatabase(path, method, requestBody);
-    }
+    // Removed silent mock fallback on 401/404 to let backend errors propagate to client
 
     const data = await response.json();
     let responseData = data.data || data;

@@ -10,7 +10,7 @@ export async function GET() {
   }
 
   const token = tokenCookie.value;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace('localhost', '127.0.0.1');
 
   // Handle mock sessions
   if (token.startsWith('mock_token_for_')) {

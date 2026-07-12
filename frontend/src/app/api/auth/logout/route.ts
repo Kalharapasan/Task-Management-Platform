@@ -9,7 +9,7 @@ import { cookies } from 'next/headers';
  */
 export async function POST() {
   const token = cookies().get('task_token')?.value;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace('localhost', '127.0.0.1');
 
   // Expire cookies immediately
   cookies().set('task_token', '', {

@@ -11,7 +11,7 @@ export async function GET() {
   const tokenCookie = cookies().get('task_token');
 
   if (!tokenCookie || !tokenCookie.value) {
-    return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+    return NextResponse.json({ user: null }, { status: 200 });
   }
 
   const token = tokenCookie.value;
@@ -32,7 +32,7 @@ export async function GET() {
   }
 
   try {
-    const response = await fetch(`${apiUrl}/user`, {
+    const response = await fetch(`${apiUrl}/me`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -45,7 +45,7 @@ export async function GET() {
       return NextResponse.json({ user: userData });
     }
 
-    return NextResponse.json({ error: 'Session expired.' }, { status: 401 });
+    return NextResponse.json({ user: null }, { status: 200 });
   } catch (err) {
     console.warn('Laravel backend offline, returning mock fallback session:', err);
     

@@ -56,8 +56,17 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     async function loadSession() {
       try {
         const data = await taskApi.getMe();
-        setUser(data.user);
+        if (data.user) {
+          setUser(data.user);
+        } else {
+          // If no user is returned (expired/invalid session), clear client cookies to prevent redirect deadlocks
+          await taskApi.logout();
+          setUser(null);
+        }
       } catch (err) {
+        try {
+          await taskApi.logout();
+        } catch (_) {}
         setUser(null);
       } finally {
         setLoading(false);

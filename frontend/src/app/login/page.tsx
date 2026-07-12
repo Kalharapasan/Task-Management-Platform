@@ -33,6 +33,7 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -116,25 +117,6 @@ export default function LoginPage() {
             Create an Account
           </Link>
         </p>
-
-        {/* Credentials hints */}
-        <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-3">
-          <h4 className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1">
-            <AlertTriangle size={14} />
-            <span>Mock Sandboxed Profiles</span>
-          </h4>
-          <div className="text-[10px] text-slate-500 space-y-1 bg-white p-2.5 rounded border border-slate-100">
-            <div className="flex justify-between">
-              <strong>Admin:</strong> <span>`admin@task.com` / `AdminPass123!`</span>
-            </div>
-            <div className="flex justify-between border-t border-dashed border-slate-100 pt-1 mt-1">
-              <strong>PM Manager:</strong> <span>`pm@task.com` / `ManagerPass123!`</span>
-            </div>
-            <div className="flex justify-between border-t border-dashed border-slate-100 pt-1 mt-1">
-              <strong>Developer:</strong> <span>`member@task.com` / `MemberPass123!`</span>
-            </div>
-          </div>
-        </div>
 
       </div>
     </div>

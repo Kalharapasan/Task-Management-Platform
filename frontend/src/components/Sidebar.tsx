@@ -55,6 +55,7 @@ export default function Sidebar() {
       default:
         return [
           { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+          { href: '/my-tasks', label: 'My Tasks', icon: CheckSquare },
           { href: '/projects', label: 'My Projects', icon: Briefcase },
           { href: '/profile', label: 'Profile', icon: User },
         ];

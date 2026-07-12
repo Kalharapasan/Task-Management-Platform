@@ -1,7 +1,18 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/request';
 
-
+/**
+ * Next.js Edge Middleware for Role-Based Access Gating.
+ * 
+ * Task Platform Security Context:
+ * Since Sanctum access tokens are stored in secure httpOnly cookies (`task_token`),
+ * the browser's JavaScript cannot read them. To enable lightweight routing authorization
+ * at the Edge layer without calling the database on every asset request, the login BFF handler
+ * sets a companion `task_role` cookie.
+ * 
+ * This middleware reads `task_token` to verify session existence and `task_role` to block
+ * unauthorized routing actions (e.g. preventing a team_member from reading /admin/users).
+ */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -18,7 +29,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-
+  // 1. Gating unauthenticated visitors
   if (!token) {
     if (!isAuthPage) {
       // Force redirect to login page
@@ -34,7 +45,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(dashboardUrl);
   }
 
- 
+  // 3. Role Routing Gates
   // Admin routes access check
   if (pathname.startsWith('/admin')) {
     if (role !== 'admin') {

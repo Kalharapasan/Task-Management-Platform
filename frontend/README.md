@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CollabTask Platform - Next.js 14 Client
 
-## Getting Started
+CollabTask is a collaborative, responsive task management client built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, and **React Query**. It consumes a Laravel 10 API, storing session credentials securely in HttpOnly cookies, routing requests through dynamic BFF proxy handlers, and rendering Kanban workflows.
 
-First, run the development server:
+---
 
+## 🚀 Quick Start Guide
+
+### 1. Configure Local Environment & API Mapping
+The frontend is configured to communicate with the Laravel API. To point the client at your local Laravel server:
+
+1. Copy the environment template:
+   ```bash
+   cp .env.example .env.local
+   ```
+2. Open `.env.local` and configure `NEXT_PUBLIC_API_URL` to point to your local Laravel server (by default it runs on port 8000):
+   ```env
+   NEXT_PUBLIC_API_URL=http://localhost:8000/api
+   ```
+3. *(Security Note)*: The Next.js BFF proxy will automatically capture the token on login/registration, store it as an httpOnly `task_token` cookie on localhost, and attach it to subsequent headers.
+
+### 2. Dependency Installation
+Install the required design systems, query caching, form validation, and test runner libraries:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Spin Up Development Server
+Start the local server (available on http://localhost:3000):
+```bash
+npm run dev
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. Run Automated Testing Suites
+Execute unit tests for the auth form validation Zod schemas and status selectors:
+```bash
+npm run test
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 🔐 Mock Credentials (API Offline Fallback)
 
-To learn more about Next.js, take a look at the following resources:
+If your local Laravel server is offline, the BFF route proxy will serve mock databases. Log in using any of the following credentials to simulate specific workspace roles:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Access Role | Email ID | Password |
+| :--- | :--- | :--- |
+| **System Administrator** | `admin@task.com` | `AdminPass123!` |
+| **Project Manager** | `pm@task.com` | `ManagerPass123!` |
+| **Team Member** | `member@task.com` | `MemberPass123!` |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+*Password Requirements: Minimum 8 characters, 1 uppercase, 1 lowercase, 1 digit, and 1 special symbol.*

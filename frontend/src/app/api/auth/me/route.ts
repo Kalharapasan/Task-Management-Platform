@@ -1,0 +1,64 @@
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+
+/**
+ * Route Handler: GET /api/auth/me
+ * 
+ * Context:
+ * Validates active session and loads the user object.
+ */
+export async function GET() {
+  const tokenCookie = cookies().get('task_token');
+
+  if (!tokenCookie || !tokenCookie.value) {
+    return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+  }
+
+  const token = tokenCookie.value;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+  // Handle mock sessions
+  if (token.startsWith('mock_token_for_')) {
+    const role = token.replace('mock_token_for_', '');
+    let mockUser = { id: 3, name: 'Marcus Watkins', email: 'member@task.com', role: 'team_member' };
+
+    if (role === 'admin') {
+      mockUser = { id: 1, name: 'Alex Thompson', email: 'admin@task.com', role: 'admin' };
+    } else if (role === 'project_manager') {
+      mockUser = { id: 2, name: 'Deborah Vance', email: 'pm@task.com', role: 'project_manager' };
+    }
+
+    return NextResponse.json({ user: mockUser });
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/user`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      const userData = await response.json();
+      return NextResponse.json({ user: userData });
+    }
+
+    return NextResponse.json({ error: 'Session expired.' }, { status: 401 });
+  } catch (err) {
+    console.warn('Laravel backend offline, returning mock fallback session:', err);
+    
+    // Check if role cookie exists
+    const role = cookies().get('task_role')?.value || 'team_member';
+    let mockUser = { id: 3, name: 'Marcus Watkins', email: 'member@task.com', role: 'team_member' };
+
+    if (role === 'admin') {
+      mockUser = { id: 1, name: 'Alex Thompson', email: 'admin@task.com', role: 'admin' };
+    } else if (role === 'project_manager') {
+      mockUser = { id: 2, name: 'Deborah Vance', email: 'pm@task.com', role: 'project_manager' };
+    }
+
+    return NextResponse.json({ user: mockUser });
+  }
+}

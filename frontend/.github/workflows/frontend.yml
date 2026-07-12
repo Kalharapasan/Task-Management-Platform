@@ -1,0 +1,36 @@
+name: ShieldAML Frontend CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js Environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Run ESLint Verification
+      run: npm run lint
+
+    - name: Run Automated Unit Tests (Vitest)
+      run: npm test
+
+    - name: Compile Production Build
+      run: npm run build
+      env:
+        NEXT_PUBLIC_API_URL: http://localhost:8000/api
+        NEXT_PUBLIC_APP_URL: http://localhost:3000

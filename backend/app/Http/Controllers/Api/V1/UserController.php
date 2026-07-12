@@ -3,48 +3,74 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    
+    public function index(Request $request): JsonResponse
     {
-        //
+        $this->authorize('viewAny', User::class);
+
+        $users = User::paginate(15);
+        return UserResource::collection($users)->response();
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+  
+    public function store(StoreUserRequest $request): JsonResponse
     {
-        //
+        $this->authorize('create', User::class);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,
+        ]);
+
+        return (new UserResource($user))
+            ->response()
+            ->setStatusCode(201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(User $user)
+   
+    public function show(User $user): JsonResponse
     {
-        //
+        $this->authorize('view', $user);
+
+        return (new UserResource($user))->response();
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, User $user)
+  
+    public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
-        //
+        $this->authorize('update', $user);
+
+        $data = $request->only(['name', 'email', 'role']);
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        $user->update($data);
+
+        return (new UserResource($user))->response();
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(User $user)
+   
+    public function destroy(User $user): JsonResponse
     {
-        //
+        $this->authorize('delete', $user);
+
+        $user->delete();
+
+        return response()->json([
+            'message' => 'User deleted successfully.',
+        ], 200);
     }
 }

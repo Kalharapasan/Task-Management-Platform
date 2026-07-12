@@ -7,6 +7,12 @@ use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Event;
 
+/**
+ * EventServiceProvider
+ *
+ * Configures the application's event listener mappings.
+ * E.g., mapping GNN-triggered fraud events to automatic account freeze listeners.
+ */
 class EventServiceProvider extends ServiceProvider
 {
     /**

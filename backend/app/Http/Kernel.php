@@ -4,17 +4,26 @@ namespace App\Http;
 
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
+/**
+ * HTTP Kernel
+ *
+ * Defines middleware stacks for the GNN AML API.
+ *
+ * Middleware execution order for an API request:
+ *   1. Global middleware (always run)
+ *   2. API middleware group (for /api/* routes)
+ *   3. Named middleware (route-specific: auth:sanctum, role:*)
+ *
+ * The 'role' middleware alias is critical — it maps the string 'role'
+ * used in route definitions to the RoleMiddleware class.
+ */
 class Kernel extends HttpKernel
 {
     /**
-     * The application's global HTTP middleware stack.
-     *
-     * These middleware are run during every request to your application.
-     *
-     * @var array<int, class-string|string>
+     * Global middleware — runs on every HTTP request.
+     * TrustProxies handles reverse proxy headers (important for AML audit IP logging).
      */
     protected $middleware = [
-        // \App\Http\Middleware\TrustHosts::class,
         \App\Http\Middleware\TrustProxies::class,
         \Illuminate\Http\Middleware\HandleCors::class,
         \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
@@ -24,9 +33,8 @@ class Kernel extends HttpKernel
     ];
 
     /**
-     * The application's route middleware groups.
-     *
-     * @var array<string, array<int, class-string|string>>
+     * Route middleware groups.
+     * 'api' group is automatically applied to all routes in routes/api.php.
      */
     protected $middlewareGroups = [
         'web' => [
@@ -39,30 +47,38 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+            // Sanctum stateless token middleware
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+
+            // Rate limiting — prevents brute-force attacks on the login endpoint
+            // Default 'api' throttle: 60 requests per minute per IP
+            \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
+
+            // Route model binding resolution (e.g., {account} → Account::find())
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
     ];
 
     /**
-     * The application's middleware aliases.
+     * Named (route-level) middleware.
      *
-     * Aliases may be used instead of class names to conveniently assign middleware to routes and groups.
-     *
-     * @var array<string, class-string|string>
+     * 'role' is the key middleware for RBAC enforcement.
+     * Used as: Route::middleware('role:admin,compliance_officer')
      */
     protected $middlewareAliases = [
-        'auth' => \App\Http\Middleware\Authenticate::class,
-        'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
-        'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class,
-        'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
-        'can' => \Illuminate\Auth\Middleware\Authorize::class,
-        'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+        'auth'             => \App\Http\Middleware\Authenticate::class,
+        'auth.basic'       => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
+        'auth.session'     => \Illuminate\Session\Middleware\AuthenticateSession::class,
+        'cache.headers'    => \Illuminate\Http\Middleware\SetCacheHeaders::class,
+        'can'              => \Illuminate\Auth\Middleware\Authorize::class,
+        'guest'            => \App\Http\Middleware\RedirectIfAuthenticated::class,
         'password.confirm' => \Illuminate\Auth\Middleware\RequirePassword::class,
-        'precognitive' => \Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests::class,
-        'signed' => \App\Http\Middleware\ValidateSignature::class,
-        'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
-        'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'precognitive'     => \Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests::class,
+        'signed'           => \App\Http\Middleware\ValidateSignature::class,
+        'throttle'         => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+        'verified'         => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+
+        // Custom RBAC middleware — registered here for use in route definitions
+        'role'             => \App\Http\Middleware\RoleMiddleware::class,
     ];
 }

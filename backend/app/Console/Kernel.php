@@ -7,17 +7,20 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
-    /**
-     * Define the application's command schedule.
-     */
+   
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Future: schedule GNN re-scoring pipeline
+        // $schedule->command('gnn:rescore-accounts')->daily();
+
+        // Future: weekly compliance report generation
+        // $schedule->command('compliance:weekly-report')->weekly();
+
+        // Clean up expired Sanctum tokens (prevents table bloat)
+        // $schedule->command('sanctum:prune-expired --hours=24')->daily();
     }
 
-    /**
-     * Register the commands for the application.
-     */
+    
     protected function commands(): void
     {
         $this->load(__DIR__.'/Commands');

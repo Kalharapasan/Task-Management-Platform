@@ -28,7 +28,7 @@ export async function POST() {
     expires: new Date(0),
   });
 
-  if (token && !token.startsWith('mock_')) {
+  if (token) {
     try {
       await fetch(`${apiUrl}/logout`, {
         method: 'POST',

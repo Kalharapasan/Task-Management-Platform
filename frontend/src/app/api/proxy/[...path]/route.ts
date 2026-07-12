@@ -1,302 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-
-let mockProjects = [
-  { id: 1, title: 'Enterprise CRM Upgrade', description: 'Overhaul customer relationship management pipeline and integrate AI lead analysis.', status: 'in_progress', ownerId: 2, startDate: '2026-06-01', dueDate: '2026-08-30' },
-  { id: 2, title: 'Mobile App Beta Launch', description: 'Compile and ship the iOS/Android client apps for closed-group customer feedback.', status: 'todo', ownerId: 2, startDate: '2026-07-01', dueDate: '2026-09-15' },
-  { id: 3, title: 'Security Compliance Auditing', description: 'Perform annual infrastructure vulnerability scan and patch identity tokens handlers.', status: 'done', ownerId: 1, startDate: '2026-05-10', dueDate: '2026-07-10' }
-];
-
-let mockProjectMembers = [
-  { projectId: 1, userId: 2 },
-  { projectId: 1, userId: 3 },
-  { projectId: 2, userId: 2 },
-  { projectId: 2, userId: 3 },
-  { projectId: 3, userId: 1 },
-  { projectId: 3, userId: 2 }
-];
-
-let mockTasks = [
-  { id: 101, projectId: 1, title: 'Setup Next.js 14 Boilerplate', description: 'Initialize repository, configure tailwind, and map basic route structures.', status: 'done', priority: 'high', assigneeId: 3, dueDate: '2026-07-15' },
-  { id: 102, projectId: 1, title: 'Database Migration Schema', description: 'Establish users, projects, tasks, and comments SQL tables with foreign relationships.', status: 'in_review', priority: 'medium', assigneeId: 3, dueDate: '2026-07-18' },
-  { id: 103, projectId: 1, title: 'Secure Sanctum Proxy BFF', description: 'Configure route handlers to set HttpOnly tokens cookies.', status: 'in_progress', priority: 'high', assigneeId: 3, dueDate: '2026-07-20' },
-  { id: 104, projectId: 1, title: 'Kanban Board Drag Fallback', description: 'Provide custom dropdown task status controls for mobile accessibility.', status: 'todo', priority: 'low', assigneeId: 2, dueDate: '2026-07-25' },
-  { id: 201, projectId: 2, title: 'Build React Native Bridges', description: 'Develop swift/kotlin abstractions for native device modules.', status: 'todo', priority: 'high', assigneeId: 3, dueDate: '2026-08-05' }
-];
-
-let mockComments = [
-  { id: 501, taskId: 103, userId: 3, content: 'BFF auth setup is running locally. Ready to link with middleware.', timestamp: '2026-07-11T16:00:00Z' },
-  { id: 502, taskId: 103, userId: 2, content: 'Excellent work. Ensure cookies configure Lax attributes.', timestamp: '2026-07-11T17:30:00Z' }
-];
-
-let mockUsers = [
-  { id: 1, name: 'Alex Thompson', email: 'admin@task.com', role: 'admin', active: true },
-  { id: 2, name: 'Deborah Vance', email: 'pm@task.com', role: 'project_manager', active: true },
-  { id: 3, name: 'Marcus Watkins', email: 'member@task.com', role: 'team_member', active: true },
-  { id: 4, name: 'Clara Oswald', email: 'clara@task.com', role: 'team_member', active: true },
-  { id: 5, name: 'Sarah Jane', email: 'sarah@task.com', role: 'team_member', active: false }
-];
-
-function serveMockDatabase(path: string, method: string, requestBody: any) {
-  // Mock API Route Mapping for Task Platform
-
-  // 1. GET dashboard stats (Role aware stats)
-  if (path === 'dashboard/stats' && method === 'GET') {
-    const role = cookies().get('task_role')?.value || 'team_member';
-    
-    if (role === 'admin') {
-      return NextResponse.json({
-        totalUsers: mockUsers.length,
-        totalProjects: mockProjects.length,
-        totalTasks: mockTasks.length,
-      });
-    } else if (role === 'project_manager') {
-      return NextResponse.json({
-        myProjectsCount: mockProjects.filter(p => p.ownerId === 2).length,
-        activeTasksCount: mockTasks.filter(t => t.status !== 'done').length,
-        teamMembersCount: mockUsers.filter(u => u.role === 'team_member').length,
-      });
-    } else {
-      // team_member
-      const assignedTasks = mockTasks.filter(t => t.assigneeId === 3);
-      return NextResponse.json({
-        assignedTasksCount: assignedTasks.length,
-        pendingTasksCount: assignedTasks.filter(t => t.status !== 'done').length,
-        completedTasksCount: assignedTasks.filter(t => t.status === 'done').length,
-        tasks: assignedTasks
-      });
-    }
-  }
-
-  // 2. GET & POST /projects
-  if (path === 'projects' && method === 'GET') {
-    return NextResponse.json(mockProjects);
-  }
-
-  if (path === 'projects' && method === 'POST') {
-    const newProject = {
-      id: Math.max(...mockProjects.map(p => p.id), 0) + 1,
-      title: requestBody.title,
-      description: requestBody.description,
-      status: requestBody.status || 'todo',
-      ownerId: 2, // Mock Owner: Deborah PM
-      startDate: new Date().toISOString().split('T')[0],
-      dueDate: requestBody.dueDate || '2026-12-31'
-    };
-    mockProjects.push(newProject);
-    // Link owner and some default team members as project members
-    mockProjectMembers.push({ projectId: newProject.id, userId: 2 });
-    mockProjectMembers.push({ projectId: newProject.id, userId: 3 });
-    return NextResponse.json(newProject, { status: 201 });
-  }
-
-  // 3. GET /projects/[id]
-  if (path.startsWith('projects/') && path.split('/').length === 2 && method === 'GET') {
-    const projectId = parseInt(path.split('/')[1]);
-    const project = mockProjects.find(p => p.id === projectId);
-    if (project) {
-      // Load members list
-      const memberIds = mockProjectMembers.filter(m => m.projectId === projectId).map(m => m.userId);
-      const members = mockUsers.filter(u => memberIds.includes(u.id));
-      return NextResponse.json({ ...project, members });
-    }
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-  }
-
-  // PUT /projects/[id]
-  if (path.startsWith('projects/') && path.split('/').length === 2 && method === 'PUT') {
-    const projectId = parseInt(path.split('/')[1]);
-    const idx = mockProjects.findIndex(p => p.id === projectId);
-    if (idx !== -1) {
-      mockProjects[idx] = { ...mockProjects[idx], ...requestBody };
-      return NextResponse.json(mockProjects[idx]);
-    }
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-  }
-
-  // DELETE /projects/[id]
-  if (path.startsWith('projects/') && path.split('/').length === 2 && method === 'DELETE') {
-    const projectId = parseInt(path.split('/')[1]);
-    mockProjects = mockProjects.filter(p => p.id !== projectId);
-    mockTasks = mockTasks.filter(t => t.projectId !== projectId);
-    mockProjectMembers = mockProjectMembers.filter(m => m.projectId !== projectId);
-    return NextResponse.json({ success: true, message: 'Project deleted.' });
-  }
-
-  // 4. GET & POST /projects/[id]/members
-  if (path.startsWith('projects/') && path.endsWith('/members') && method === 'POST') {
-    const projectId = parseInt(path.split('/')[1]);
-    const { userId } = requestBody;
-    const exists = mockProjectMembers.some(m => m.projectId === projectId && m.userId === userId);
-    if (!exists) {
-      mockProjectMembers.push({ projectId, userId });
-    }
-    const memberIds = mockProjectMembers.filter(m => m.projectId === projectId).map(m => m.userId);
-    const members = mockUsers.filter(u => memberIds.includes(u.id));
-    return NextResponse.json({ success: true, members });
-  }
-
-  if (path.startsWith('projects/') && path.endsWith('/members') && method === 'DELETE') {
-    const projectId = parseInt(path.split('/')[1]);
-    const { userId } = requestBody;
-    mockProjectMembers = mockProjectMembers.filter(m => !(m.projectId === projectId && m.userId === userId));
-    const memberIds = mockProjectMembers.filter(m => m.projectId === projectId).map(m => m.userId);
-    const members = mockUsers.filter(u => memberIds.includes(u.id));
-    return NextResponse.json({ success: true, members });
-  }
-
-  // 5. GET & POST /projects/[id]/tasks
-  if (path.startsWith('projects/') && path.endsWith('/tasks') && method === 'GET') {
-    const projectId = parseInt(path.split('/')[1]);
-    const tasks = mockTasks.filter(t => t.projectId === projectId);
-    return NextResponse.json(tasks);
-  }
-
-  if (path.startsWith('projects/') && path.endsWith('/tasks') && method === 'POST') {
-    const projectId = parseInt(path.split('/')[1]);
-    const newTask = {
-      id: Math.max(...mockTasks.map(t => t.id), 0) + 1,
-      projectId,
-      title: requestBody.title,
-      description: requestBody.description || '',
-      status: requestBody.status || 'todo',
-      priority: requestBody.priority || 'medium',
-      assigneeId: requestBody.assigneeId || 3,
-      dueDate: requestBody.dueDate || new Date().toISOString().split('T')[0]
-    };
-    mockTasks.push(newTask);
-    return NextResponse.json(newTask, { status: 201 });
-  }
-
-  // 6. GET /tasks/[id]
-  if (path.startsWith('tasks/') && path.split('/').length === 2 && method === 'GET') {
-    const taskId = parseInt(path.split('/')[1]);
-    const task = mockTasks.find(t => t.id === taskId);
-    if (task) {
-      const assignee = mockUsers.find(u => u.id === task.assigneeId);
-      return NextResponse.json({ ...task, assignee });
-    }
-    return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-  }
-
-  // PUT /tasks/[id] (status transition/edits)
-  if (path.startsWith('tasks/') && path.split('/').length === 2 && method === 'PUT') {
-    const taskId = parseInt(path.split('/')[1]);
-    const idx = mockTasks.findIndex(t => t.id === taskId);
-    if (idx !== -1) {
-      mockTasks[idx] = { ...mockTasks[idx], ...requestBody };
-      return NextResponse.json(mockTasks[idx]);
-    }
-    return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-  }
-
-  // DELETE /tasks/[id]
-  if (path.startsWith('tasks/') && path.split('/').length === 2 && method === 'DELETE') {
-    const taskId = parseInt(path.split('/')[1]);
-    mockTasks = mockTasks.filter(t => t.id !== taskId);
-    return NextResponse.json({ success: true, message: 'Task deleted.' });
-  }
-
-  // 7. GET & POST /tasks/[id]/comments
-  if (path.startsWith('tasks/') && path.endsWith('/comments') && method === 'GET') {
-    const taskId = parseInt(path.split('/')[1]);
-    const comments = mockComments
-      .filter(c => c.taskId === taskId)
-      .map(c => {
-        const author = mockUsers.find(u => u.id === c.userId);
-        return { ...c, author };
-      });
-    return NextResponse.json(comments);
-  }
-
-  if (path.startsWith('tasks/') && path.endsWith('/comments') && method === 'POST') {
-    const taskId = parseInt(path.split('/')[1]);
-    const role = cookies().get('task_role')?.value || 'team_member';
-    let activeUserId = 3;
-    if (role === 'admin') activeUserId = 1;
-    else if (role === 'project_manager') activeUserId = 2;
-
-    const newComment = {
-      id: Math.max(...mockComments.map(c => c.id), 0) + 1,
-      taskId,
-      userId: activeUserId,
-      content: requestBody.content,
-      timestamp: new Date().toISOString()
-    };
-    mockComments.push(newComment);
-    const author = mockUsers.find(u => u.id === activeUserId);
-    return NextResponse.json({ ...newComment, author }, { status: 201 });
-  }
-
-  // 8. GET, POST, PUT, DELETE /admin/users
-  if (path === 'admin/users' && method === 'GET') {
-    return NextResponse.json(mockUsers);
-  }
-
-  if (path === 'admin/users' && method === 'POST') {
-    const newUser = {
-      id: Math.max(...mockUsers.map(u => u.id), 0) + 1,
-      name: requestBody.name,
-      email: requestBody.email,
-      role: requestBody.role || 'team_member',
-      active: true
-    };
-    mockUsers.push(newUser);
-    return NextResponse.json(newUser, { status: 201 });
-  }
-
-  if (path.startsWith('admin/users/') && method === 'PUT') {
-    const userId = parseInt(path.split('/')[2]);
-    const idx = mockUsers.findIndex(u => u.id === userId);
-    if (idx !== -1) {
-      mockUsers[idx] = { ...mockUsers[idx], ...requestBody };
-      return NextResponse.json(mockUsers[idx]);
-    }
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  }
-
-  if (path.startsWith('admin/users/') && method === 'DELETE') {
-    const userId = parseInt(path.split('/')[2]);
-    const idx = mockUsers.findIndex(u => u.id === userId);
-    if (idx !== -1) {
-      mockUsers[idx].active = false; // Deactivate user
-      return NextResponse.json({ success: true, user: mockUsers[idx] });
-    }
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  }
-
-  // 9. GET /tasks/my — tasks assigned to the current user
-  if (path === 'tasks/my' && method === 'GET') {
-    const role = cookies().get('task_role')?.value || 'team_member';
-    let activeUserId = 3;
-    if (role === 'admin') activeUserId = 1;
-    else if (role === 'project_manager') activeUserId = 2;
-    const assignedTasks = mockTasks.filter(t => t.assigneeId === activeUserId);
-    return NextResponse.json(assignedTasks);
-  }
-
-  // 10. PUT /profile — update own profile
-  if (path === 'profile' && method === 'PUT') {
-    const role = cookies().get('task_role')?.value || 'team_member';
-    let activeUserId = 3;
-    if (role === 'admin') activeUserId = 1;
-    else if (role === 'project_manager') activeUserId = 2;
-    const idx = mockUsers.findIndex(u => u.id === activeUserId);
-    if (idx !== -1) {
-      if (requestBody?.name) mockUsers[idx].name = requestBody.name;
-      if (requestBody?.email) mockUsers[idx].email = requestBody.email;
-      return NextResponse.json(mockUsers[idx]);
-    }
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  }
-
-  return NextResponse.json(
-    { error: `Laravel API offline. Mock route for "${path}" not configured.` },
-    { status: 503 }
-  );
-}
-
 function translateUserToFrontend(laravelUser: any) {
   if (!laravelUser) return null;
   return {
@@ -410,7 +114,7 @@ async function getRealDashboardStats(apiUrl: string, token: string, role: string
       const usersData = await usersRes.json();
       teamMembersCount = (usersData.data || usersData).filter((u: any) => u.role === 'team_member').length;
     } else {
-      teamMembersCount = 5;
+      teamMembersCount = 5; // Fallback or could fetch real project team members
     }
   }
 
@@ -433,15 +137,15 @@ async function getRealDashboardStats(apiUrl: string, token: string, role: string
   } else if (role === 'project_manager') {
     return {
       myProjectsCount: laravelProjects.length,
-      activeTasksCount: allTasks.filter(t => t.status !== 'done').length,
+      activeTasksCount: allTasks.filter((t: any) => t.status !== 'done').length,
       teamMembersCount,
     };
   } else {
-    const assignedTasks = allTasks.filter(t => t.assigned_to === userId).map(translateTaskToFrontend);
+    const assignedTasks = allTasks.filter((t: any) => t.assigned_to === userId).map(translateTaskToFrontend);
     return {
       assignedTasksCount: assignedTasks.length,
-      pendingTasksCount: assignedTasks.filter(t => t.status !== 'done').length,
-      completedTasksCount: assignedTasks.filter(t => t.status === 'done').length,
+      pendingTasksCount: assignedTasks.filter((t: any) => t.status !== 'done').length,
+      completedTasksCount: assignedTasks.filter((t: any) => t.status === 'done').length,
       tasks: assignedTasks
     };
   }
@@ -452,8 +156,6 @@ async function handleProxy(request: Request, { params }: { params: { path: strin
   let method = request.method;
   const token = cookies().get('task_token')?.value;
 
-  const isMockToken = token && token.startsWith('mock_token_for_');
-
   let requestBody: any = null;
   if (['POST', 'PUT', 'PATCH'].includes(method)) {
     try {
@@ -461,11 +163,6 @@ async function handleProxy(request: Request, { params }: { params: { path: strin
     } catch (e) {
       requestBody = null;
     }
-  }
-
-  // 1. Direct mock token bypass
-  if (isMockToken) {
-    return serveMockDatabase(path, method, requestBody);
   }
 
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace('localhost', '127.0.0.1');
@@ -479,7 +176,6 @@ async function handleProxy(request: Request, { params }: { params: { path: strin
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    // A. Intercept & translate special requests
     if (path === 'dashboard/stats' && method === 'GET') {
       const meRes = await fetch(`${apiUrl}/me`, { headers });
       if (meRes.ok) {
@@ -488,7 +184,7 @@ async function handleProxy(request: Request, { params }: { params: { path: strin
         const stats = await getRealDashboardStats(apiUrl, token!, user.role, user.id);
         return NextResponse.json(stats);
       }
-      return serveMockDatabase(path, method, requestBody);
+      return NextResponse.json({ error: 'Failed to fetch dashboard stats' }, { status: 500 });
     }
 
     if (path === 'tasks/my' && method === 'GET') {
@@ -497,7 +193,6 @@ async function handleProxy(request: Request, { params }: { params: { path: strin
         const meData = await meRes.json();
         const user = meData.user || meData;
         
-        // Fetch all projects and tasks, filter by assignee
         const projRes = await fetch(`${apiUrl}/v1/projects`, { headers });
         if (projRes.ok) {
           const projectsData = await projRes.json();
@@ -511,11 +206,11 @@ async function handleProxy(request: Request, { params }: { params: { path: strin
               allTasks = allTasks.concat(projectTasks);
             }
           }
-          const assignedTasks = allTasks.filter(t => t.assigned_to === user.id).map(translateTaskToFrontend);
+          const assignedTasks = allTasks.filter((t: any) => t.assigned_to === user.id).map(translateTaskToFrontend);
           return NextResponse.json(assignedTasks);
         }
       }
-      return serveMockDatabase(path, method, requestBody);
+      return NextResponse.json({ error: 'Failed to fetch my tasks' }, { status: 500 });
     }
 
     if (path === 'profile' && method === 'PUT') {
@@ -534,14 +229,12 @@ async function handleProxy(request: Request, { params }: { params: { path: strin
             return NextResponse.json(translateUserToFrontend(updated.data || updated));
           }
         } else {
-          // For non-admin roles, simulate successful profile update
           return NextResponse.json({ ...user, ...requestBody });
         }
       }
-      return serveMockDatabase(path, method, requestBody);
+      return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
     }
 
-    // project member add/remove
     if (path.startsWith('projects/') && path.endsWith('/members')) {
       const projectId = path.split('/')[1];
       if (method === 'POST') {
@@ -570,10 +263,9 @@ async function handleProxy(request: Request, { params }: { params: { path: strin
           return NextResponse.json({ success: true, members: members.map(translateUserToFrontend) });
         }
       }
-      return serveMockDatabase(path, method, requestBody);
+      return NextResponse.json({ error: 'Failed to update project members' }, { status: 500 });
     }
 
-    // Default translation paths
     let backendPath = path;
     let payload = requestBody;
 
@@ -591,7 +283,6 @@ async function handleProxy(request: Request, { params }: { params: { path: strin
       payload.status = payload.status || 'todo';
     } else if (path.startsWith('tasks/') && path.split('/').length === 2 && method === 'PUT') {
       const taskId = path.split('/')[1];
-      // If it only contains status, or if we want to support developer updates
       const meRes = await fetch(`${apiUrl}/me`, { headers });
       const meData = await meRes.json();
       const currentUser = meData.user || meData;
@@ -632,12 +323,9 @@ async function handleProxy(request: Request, { params }: { params: { path: strin
       body: payload ? JSON.stringify(payload) : undefined,
     });
 
-    // Removed silent mock fallback on 401/404 to let backend errors propagate to client
-
     const data = await response.json();
     let responseData = data.data || data;
 
-    // B. Translate response back to frontend models
     if (response.ok) {
       if (path === 'projects' && method === 'GET') {
         const list = Array.isArray(responseData) ? responseData : [];
@@ -671,9 +359,12 @@ async function handleProxy(request: Request, { params }: { params: { path: strin
     }
 
     return NextResponse.json(responseData, { status: response.status });
-  } catch (networkError) {
-    console.warn(`Proxy failed (${method} ${path}). Serving in-memory mock database.`, networkError);
-    return serveMockDatabase(path, method, requestBody);
+  } catch (networkError: any) {
+    console.error(`Proxy failed (${method} ${path}).`, networkError);
+    return NextResponse.json(
+      { error: 'API Gateway Error', details: networkError.message },
+      { status: 503 }
+    );
   }
 }
 

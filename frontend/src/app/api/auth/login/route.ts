@@ -12,8 +12,6 @@ export async function POST(request: Request) {
       );
     }
 
-
-
     const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace('localhost', '127.0.0.1');
 
     try {
@@ -54,42 +52,11 @@ export async function POST(request: Request) {
           { status: response.status }
         );
       }
-    } catch (networkError) {
-      console.warn('Laravel API offline, returning mock fallback session:', networkError);
-
-      // Validate mock credentials for three standard Task Management roles
-      let mockUser = null;
-      if (email === 'admin@task.com' && password === 'AdminPass123!') {
-        mockUser = { id: 1, name: 'Alex Thompson', email, role: 'admin' };
-      } else if (email === 'pm@task.com' && password === 'ManagerPass123!') {
-        mockUser = { id: 2, name: 'Deborah Vance', email, role: 'project_manager' };
-      } else if (email === 'member@task.com' && password === 'MemberPass123!') {
-        mockUser = { id: 3, name: 'Marcus Watkins', email, role: 'team_member' };
-      }
-
-      if (mockUser) {
-        cookies().set('task_token', `mock_token_for_${mockUser.role}`, {
-          httpOnly: true,
-          secure: false,
-          sameSite: 'lax',
-          path: '/',
-          maxAge: 60 * 60 * 24,
-        });
-
-        cookies().set('task_role', mockUser.role, {
-          httpOnly: false,
-          secure: false,
-          sameSite: 'lax',
-          path: '/',
-          maxAge: 60 * 60 * 24,
-        });
-
-        return NextResponse.json({ user: mockUser });
-      }
-
+    } catch (networkError: any) {
+      console.error('Laravel API offline or connection failed:', networkError);
       return NextResponse.json(
-        { error: 'Invalid credentials. Hint: use pm@task.com / ManagerPass123! or admin@task.com / AdminPass123! or member@task.com / MemberPass123!' },
-        { status: 401 }
+        { error: 'API Gateway Error', details: networkError.message },
+        { status: 503 }
       );
     }
   } catch (err) {

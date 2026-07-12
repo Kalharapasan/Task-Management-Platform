@@ -58,33 +58,12 @@ export async function POST(request: Request) {
           { status: response.status }
         );
       }
-    } catch (networkError) {
-      console.warn('Laravel API offline. Returning mock registered account:', networkError);
-
-      const mockNewUser = {
-        id: 99,
-        name,
-        email,
-        role: 'team_member', // Default signup role
-      };
-
-      cookies().set('task_token', `mock_token_for_team_member`, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24,
-      });
-
-      cookies().set('task_role', 'team_member', {
-        httpOnly: false,
-        secure: false,
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24,
-      });
-
-      return NextResponse.json({ user: mockNewUser });
+    } catch (networkError: any) {
+      console.error('Laravel API offline or connection failed:', networkError);
+      return NextResponse.json(
+        { error: 'API Gateway Error', details: networkError.message },
+        { status: 503 }
+      );
     }
   } catch (err) {
     return NextResponse.json(
